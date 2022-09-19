@@ -1,0 +1,51 @@
+NUM_GPUS: 1
+MODEL:
+  TYPE: 'ssd'
+  PRECISION: 'float16'
+  CLASSES: ['__background__',
+            'aeroplane', 'bicycle', 'bird', 'boat',
+            'bottle', 'bus', 'car', 'cat', 'chair',
+            'cow', 'diningtable', 'dog', 'horse',
+            'motorbike', 'person', 'pottedplant',
+            'sheep', 'sofa', 'train', 'tvmonitor']
+BACKBONE:
+  TYPE: 'vgg16_fcn.ssd300'
+  NORM: ''
+  FREEZE_AT: 0
+  COARSEST_STRIDE: 300
+FPN:
+  ACTIVATION: 'ReLU'
+ANCHOR_GENERATOR:
+  STRIDES: [8, 16, 32, 64, 100, 300]
+  SIZES: [[30, 60], [60, 110],[110, 162],
+          [162, 213], [213, 264], [264, 315]]
+  ASPECT_RATIOS: [[1, 2, 0.5],
+                  [1, 2, 0.5, 3, 0.33],
+                  [1, 2, 0.5, 3, 0.33],
+                  [1, 2, 0.5, 3, 0.33],
+                  [1, 2, 0.5],
+                  [1, 2, 0.5]]
+SOLVER:
+  BASE_LR: 0.001
+  WEIGHT_DECAY: 0.0005
+  DECAY_STEPS: [80000, 100000]
+  MAX_STEPS: 120000
+  SNAPSHOT_EVERY: 5000
+  SNAPSHOT_PREFIX: 'voc_ssd300_VGG_16'
+TRAIN:
+  WEIGHTS: '../data/pretrained/VGG-16-FCN_in1k.pkl'
+  DATASET: '../data/datasets/voc_trainval0712'
+  LOADER: 'ssd_train'
+  USE_DIFF: True
+  IMS_PER_BATCH: 16
+  SCALES: [300]
+  SCALES_RANGE: [0.25, 1.0]
+  COLOR_JITTER: 0.5
+TEST:
+  DATASET: '../data/datasets/voc_test2007'
+  JSON_DATASET: '../data/datasets/voc_test2007.json'
+  EVALUATOR: 'voc2007'
+  IMS_PER_BATCH: 8
+  SCALES: [300]
+  NMS_THRESH: 0.45
+  SCORE_THRESH: 0.01

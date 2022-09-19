@@ -1,0 +1,10 @@
+# Python dependencies required for development.
+opencv-python
+Pillow
+pyyaml
+prettytable
+matplotlib
+codewithgpu
+shapely
+Cython
+pycocotools

@@ -1,0 +1,40 @@
+NUM_GPUS: 2
+MODEL:
+  TYPE: 'faster_rcnn'
+  PRECISION: 'float16'
+  CLASSES: ['__background__',
+            'aeroplane', 'bicycle', 'bird', 'boat',
+            'bottle', 'bus', 'car', 'cat', 'chair',
+            'cow', 'diningtable', 'dog', 'horse',
+            'motorbike', 'person', 'pottedplant',
+            'sheep', 'sofa', 'train', 'tvmonitor']
+BACKBONE:
+  TYPE: 'resnet50.fpn'
+FPN:
+  MIN_LEVEL: 2
+  MAX_LEVEL: 6
+ANCHOR_GENERATOR:
+  STRIDES: [4, 8, 16, 32, 64]
+FAST_RCNN:
+  BBOX_REG_LOSS_TYPE: 'smooth_l1'
+SOLVER:
+  BASE_LR: 0.002
+  DECAY_STEPS: [80000, 100000]
+  MAX_STEPS: 120000
+  SNAPSHOT_EVERY: 5000
+  SNAPSHOT_PREFIX: 'voc_cascade_rcnn_R_50_FPN'
+TRAIN:
+  WEIGHTS: '../data/pretrained/R-50_in1k_cls90e.pkl'
+  DATASET: '../data/datasets/voc_trainval0712'
+  USE_DIFF: True
+  IMS_PER_BATCH: 2
+  SCALES: [480, 512, 544, 576, 608, 640]
+  MAX_SIZE: 1000
+TEST:
+  DATASET: '../data/datasets/voc_test2007'
+  JSON_DATASET: '../data/datasets/voc_test2007.json'
+  EVALUATOR: 'voc2007'
+  IMS_PER_BATCH: 1
+  SCALES: [640]
+  MAX_SIZE: 1000
+  NMS_THRESH: 0.45

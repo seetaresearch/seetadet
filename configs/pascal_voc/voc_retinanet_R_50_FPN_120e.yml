@@ -1,0 +1,38 @@
+NUM_GPUS: 1
+MODEL:
+  TYPE: 'retinanet'
+  PRECISION: 'float32'
+  CLASSES: ['__background__',
+            'aeroplane', 'bicycle', 'bird', 'boat',
+            'bottle', 'bus', 'car', 'cat', 'chair',
+            'cow', 'diningtable', 'dog', 'horse',
+            'motorbike', 'person', 'pottedplant',
+            'sheep', 'sofa', 'train', 'tvmonitor']
+BACKBONE:
+  TYPE: 'resnet50.fpn'
+SOLVER:
+  BASE_LR: 0.01
+  WARM_UP_STEPS: 3000
+  DECAY_STEPS: [80000, 100000]
+  MAX_STEPS: 120000
+  SNAPSHOT_EVERY: 5000
+  SNAPSHOT_PREFIX: 'voc_retinanet_R_50_FPN'
+TRAIN:
+  WEIGHTS: '../data/pretrained/R-50_in1k_cls90e.pkl'
+  DATASET: '../data/datasets/voc_trainval0712'
+  USE_DIFF: True
+  IMS_PER_BATCH: 16
+  SCALES: [512]
+  SCALES_RANGE: [0.1, 2.0]
+  MAX_SIZE: 512
+  CROP_SIZE: 512
+  COLOR_JITTER: 0.5
+TEST:
+  DATASET: '../data/datasets/voc_test2007'
+  JSON_DATASET: '../data/datasets/voc_test2007.json'
+  EVALUATOR: 'voc2007'
+  IMS_PER_BATCH: 1
+  SCALES: [512]
+  MAX_SIZE: 512
+  CROP_SIZE: 512
+  NMS_THRESH: 0.45
