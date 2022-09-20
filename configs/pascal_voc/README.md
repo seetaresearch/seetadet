@@ -1,16 +1,17 @@
 # Pascal VOC
 
 ## Introduction
-```latex
-@Article{Everingham10,
-   author = "Everingham, M. and Van~Gool, L. and Williams, C. K. I. and Winn, J. and Zisserman, A.",
-   title = "The Pascal Visual Object Classes (VOC) Challenge",
-   journal = "International Journal of Computer Vision",
-   volume = "88",
-   year = "2010",
-   number = "2",
-   month = jun,
-   pages = "303--338",
+
+```
+@article{everingham2010pascal,
+  title={The PASCAL Visual Object Classes (VOC) Challenge},
+  author={Everingham, Mark and Van Gool, Luc and Williams, Christopher KI and Winn, John and Zisserman, Andrew},
+  journal={International Journal of Computer Vision},
+  volume={88},
+  number={2},
+  pages={303--338},
+  year={2010},
+  publisher={Springer}
 }
 ```
 

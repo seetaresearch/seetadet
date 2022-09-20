@@ -1,14 +1,14 @@
 # Mask R-CNN
 
 ## Introduction
+
 ```
-@article{He_2017,
-   title={Mask R-CNN},
-   journal={2017 IEEE International Conference on Computer Vision (ICCV)},
-   publisher={IEEE},
-   author={He, Kaiming and Gkioxari, Georgia and Dollar, Piotr and Girshick, Ross},
-   year={2017},
-   month={Oct}
+@inproceedings{he2017mask,
+  title={Mask R-CNN},
+  author={He, Kaiming and Gkioxari, Georgia and Doll{\'a}r, Piotr and Girshick, Ross},
+  booktitle={Proceedings of the IEEE International Conference on Computer Vision},
+  pages={2961--2969},
+  year={2017}
 }
 ```
 

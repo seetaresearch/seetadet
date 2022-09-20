@@ -1,11 +1,13 @@
 # Focal Loss for Dense Object Detection
 
 ## Introduction
+
 ```
 @inproceedings{lin2017focal,
-  title={Focal loss for dense object detection},
+  title={Focal Loss for Dense Object Detection},
   author={Lin, Tsung-Yi and Goyal, Priya and Girshick, Ross and He, Kaiming and Doll{\'a}r, Piotr},
-  booktitle={Proceedings of the IEEE international conference on computer vision},
+  booktitle={Proceedings of the IEEE International Conference on Computer Vision},
+  pages={2980--2988},
   year={2017}
 }
 ```
@@ -14,12 +16,5 @@
 
 | Model | Lr sched | Infer time (s/im) | box AP | Download |
 | :---: | :------: | :---------------: | :----: | :------: |
-| [R-50-FPN-800](coco_retinanet_R-50-FPN_800_1x.yml) | 1x | 0.051 | 37.4 | [model](https://dragon.seetatech.com/download/models/seetadet/retinanet/coco_retinanet_R-50-FPN_800_1x/model_final.pkl) |
-| [R-50-FPN-800](coco_retinanet_R-50-FPN_800_2x.yml) | 2x | 0.051 | 39.1 | [model](https://dragon.seetatech.com/download/models/seetadet/retinanet/coco_retinanet_R-50-FPN_800_2x/model_final.pkl) |
-
-## Pascal VOC Object Detection Baselines
-
-| Model | Lr sched | Infer time (s/im) | AP@0.5 | Download |
-| :---: | :------: | :---------------: | :----: | :------: |
-| [R-50-FPN-512](voc_retinanet_R-50-FPN_512_120e.yml) | 120e | 0.017 | 83.0 | [model](https://dragon.seetatech.com/download/models/seetadet/retinanet/voc_retinanet_R-50-FPN_512/model_final.pkl) |
-| [R-50-FPN-512](voc_retinanet_R-50-FPN_640_120e.yml) | 120e | 0.017 | 83.0 | [model](https://dragon.seetatech.com/download/models/seetadet/retinanet/voc_retinanet_R-50-FPN_512/model_final.pkl) |
+| [R50-FPN](coco_retinanet_R_50_FPN_1x.yml) | 1x | - | - | [model]() &#124; [log]() |
+| [R50-FPN](coco_retinanet_R_50_FPN_3x.yml) | 3x | - | - | [model]() &#124; [log]() |
