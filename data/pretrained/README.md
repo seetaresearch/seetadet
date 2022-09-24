@@ -6,9 +6,10 @@ This folder is kept for the pretrained models.
 
 ## ImageNet Pretrained Models
 
-### Training settings
+### Common settings
 
-- ResNet models trained with 200 epochs follow the procedure in arXiv.1812.01187.
+- ResNet models were trained with 200 epochs follow the procedure in arXiv.1812.01187.
+- Channels of the first conv are inverted if trained in ``RGB`` format.
 
 ### ResNet
 

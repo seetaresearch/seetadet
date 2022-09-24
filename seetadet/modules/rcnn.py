@@ -100,7 +100,7 @@ class RCNNInference(InferenceModule):
         outputs = self.forward_model(inputs['img'], inputs['im_info'],
                                      inputs['grid_info'])
         outputs = dict((k, outputs[k].numpy()) for k in outputs.keys())
-        cls_score, bbox_pred = self.forward_cascade(outputs)
+        cls_score, bbox_pred = self.forward_cascade(outputs, im_info)
         ims_per_batch, num_scales = len(imgs), len(cfg.TEST.SCALES)
         results = [([], [], []) for _ in range(ims_per_batch)]
         batch_inds = outputs['rois'][:, :1].astype('int32')
@@ -128,10 +128,11 @@ class RCNNInference(InferenceModule):
         """Run mask inference."""
         lvl_min, lvl_max = cfg.FAST_RCNN.MIN_LEVEL, cfg.FAST_RCNN.MAX_LEVEL
         lvls = distribute_boxes(proposals[:, 1:5], lvl_min, lvl_max)
-        roi_inds = [np.where(lvls == (i + lvl_min))[0]
-                    for i in range(lvl_max - lvl_min + 1)]
+        pool_inds = [np.where(lvls == (i + lvl_min))[0]
+                     for i in range(lvl_max - lvl_min + 1)]
+        restore_inds = np.concatenate(pool_inds).argsort()
         rois, labels = [], []
-        for inds in roi_inds:
+        for inds in pool_inds:
             rois.append(proposals[inds, :5] if len(inds) > 0 else
                         np.array([[-1, 0, 0, 1, 1]], 'float32'))
             labels.append(proposals[inds, 5].astype('int64')
@@ -146,12 +147,12 @@ class RCNNInference(InferenceModule):
         strides = np.arange(num_rois) * num_classes
         mask_inds = self.model.to_tensor(strides[fg_inds] + labels[fg_inds])
         mask_pred = mask_pred.flatten_(0, 1)[mask_inds].numpy()
-        mask_pred = mask_pred[np.concatenate(roi_inds).argsort()].copy()
+        mask_pred = mask_pred[restore_inds].copy()
         self.timers['im_detect_mask'].toc()
         return mask_pred
 
     @torch.no_grad()
-    def forward_cascade(self, outputs):
+    def forward_cascade(self, outputs, im_info):
         """Run cascade inference."""
         if not hasattr(self.model, 'bbox_heads'):
             bbox_pred = bbox_transform_inv(
@@ -160,22 +161,31 @@ class RCNNInference(InferenceModule):
             return outputs['cls_score'], bbox_pred
         num_stages = len(self.model.bbox_heads)
         batch_inds = outputs['rois'][:, :1]
-        cls_score = outputs['cls_score'].copy()
-        lvl_slices = np.cumsum([0] + list(x.size(0) for x in self.model.outputs['rois']))
-        lvl_slices = [slice(lvl_slices[i], lvl_slices[i + 1])
-                      for i in range(len(lvl_slices) - 1)]
+        ymax, xmax = np.split(im_info[batch_inds.flatten().astype('int32'), :2], 2, 1)
+        lvl_min, lvl_max = cfg.FAST_RCNN.MIN_LEVEL, cfg.FAST_RCNN.MAX_LEVEL
         inputs = {'features': self.model.outputs['features']}
+        cls_score = outputs['cls_score'].copy()
+        valid_inds = restore_inds = bbox_pred = None
         for i in range(num_stages):
             if i > 0:
                 outputs = self.model.bbox_heads[i](inputs)
                 outputs = dict((k, outputs[k].numpy()) for k in outputs.keys())
-                cls_score += outputs['cls_score']
+                valid_inds = np.where(outputs['rois'][:, 0] > -2)[0]
+                cls_score += outputs['cls_score'][valid_inds][restore_inds]
             bbox_pred = bbox_transform_inv(
                 outputs['rois'][:, 1:5], outputs['bbox_pred'],
                 weights=self.model.bbox_reg_weights[i])
+            bbox_pred = bbox_pred[valid_inds][restore_inds] if i > 0 else bbox_pred
             if i < num_stages - 1:
+                for k, v in zip([(0, 2), (1, 3)], [xmax, ymax]):
+                    bbox_pred[:, k] = np.maximum(np.minimum(bbox_pred[:, k], v), 0)
                 proposals = np.hstack((batch_inds, bbox_pred))
-                rois = [proposals[lvl_slice] for lvl_slice in lvl_slices]
+                lvls = distribute_boxes(bbox_pred, lvl_min, lvl_max)
+                pool_inds = [np.where(lvls == (i + lvl_min))[0]
+                             for i in range(lvl_max - lvl_min + 1)]
+                restore_inds = np.concatenate(pool_inds).argsort()
+                rois = [proposals[inds] if len(inds) > 0 else
+                        np.array([[-2, 0, 0, 1, 1]], 'float32') for inds in pool_inds]
                 inputs['rois'] = [self.model.to_tensor(x) for x in rois]
         cls_score *= 1.0 / num_stages
         return cls_score, bbox_pred

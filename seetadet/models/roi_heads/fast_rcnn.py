@@ -23,6 +23,7 @@ from seetadet.core.config import cfg
 from seetadet.ops.build import build_loss
 from seetadet.ops.conv import ConvNorm2d
 from seetadet.ops.vision import RoIPooler
+from seetadet.ops.vision import ScaleGradient
 
 
 class FastRCNNHead(nn.Module):
@@ -65,6 +66,7 @@ class FastRCNNHead(nn.Module):
             inputs['features'][i], inputs['rois'][i],
             spatial_scale=spatial_scale) for i, spatial_scale
             in enumerate(self.spatial_scales)])
+        x = ScaleGradient.apply(x, inputs.pop('grad_scale', 1.0))
         for layer in self.output_conv:
             x = layer(x)
         x = x.flatten_(1)

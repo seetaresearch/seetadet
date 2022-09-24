@@ -27,6 +27,7 @@ from seetadet.ops.build import build_loss
 from seetadet.ops.build import build_norm
 from seetadet.ops.conv import ConvNorm2d
 from seetadet.ops.fusion import fuse_conv_bn
+from seetadet.utils import profiler
 
 
 class RetinaNetHead(nn.Module):
@@ -59,6 +60,7 @@ class RetinaNetHead(nn.Module):
         self.activation = build_activation(cfg.RETINANET.ACTIVATION, inplace=True)
         self.cls_loss = build_loss('sigmoid_focal')
         self.bbox_loss = build_loss(cfg.RETINANET.BBOX_REG_LOSS_TYPE, beta=0.1)
+        self.ema_normalizer = profiler.ExponentialMovingAverage()
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -120,7 +122,7 @@ class RetinaNetHead(nn.Module):
         cls_loss = self.cls_loss(inputs['cls_score'], targets['labels'])
         bbox_loss = self.bbox_loss(bbox_pred, targets['bbox_targets'],
                                    targets['bbox_anchors'])
-        normalizer = targets['bbox_inds'].size(0)
+        normalizer = self.ema_normalizer.update(targets['bbox_inds'].size(0))
         cls_loss_weight = 1.0 / normalizer
         bbox_loss_weight = cfg.RETINANET.BBOX_REG_LOSS_WEIGHT / normalizer
         cls_loss = cls_loss.mul_(cls_loss_weight)

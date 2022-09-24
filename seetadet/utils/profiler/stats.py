@@ -54,16 +54,16 @@ class ExponentialMovingAverage(object):
         if self.value is None:
             self.value = value
         else:
-            self.value = (self.decay * self.value +
-                          (1.0 - self.decay) * value)
+            self.value = self.decay * self.value + (1. - self.decay) * value
         self.total += value
         self.count += 1
+        return self.running_average()
 
-    def global_average(self):
+    def average(self):
         return self.total / self.count
 
     def running_average(self):
-        return float(self.value)
+        return self.value
 
     def __float__(self):
         return self.running_average()

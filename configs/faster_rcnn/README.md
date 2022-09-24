@@ -1,4 +1,4 @@
-# Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks
+# Faster R-CNN
 
 ## Introduction
 
@@ -16,5 +16,5 @@
 
 | Model | Lr sched | Infer time (fps) | box AP | Download |
 | :---: | :------: | :--------------: | :----: | :-----: |
-| [R50-FPN](coco_faster_rcnn_R_50_FPN_1x.yml) | 1x | 37.04 | 37.7 | [model](https://dragon.seetatech.com/download/seetadet/faster_rcnn/coco_faster_rcnn_R_50_FPN_1x/model_7abb52ab.pkl) &#124; [log](https://dragon.seetatech.com/download/seetadet/faster_rcnn/coco_faster_rcnn_R_50_FPN_1x/logs.json) |
-| [R50-FPN](coco_faster_rcnn_R_50_FPN_3x.yml) | 3x | 37.04 | 39.8 | [model](https://dragon.seetatech.com/download/seetadet/faster_rcnn/coco_faster_rcnn_R_50_FPN_3x/model_04e548ca.pkl) &#124; [log](https://dragon.seetatech.com/download/seetadet/faster_rcnn/coco_faster_rcnn_R_50_FPN_3x/logs.json) |
+| [R50-FPN](coco_faster_rcnn_R_50_FPN_1x.yml) | 1x | 45.45 | 37.4 | [model](https://dragon.seetatech.com/download/seetadet/faster_rcnn/coco_faster_rcnn_R_50_FPN_1x/model_7544cad4.pkl) &#124; [log](https://dragon.seetatech.com/download/seetadet/faster_rcnn/coco_faster_rcnn_R_50_FPN_1x/logs.json) |
+| [R50-FPN](coco_faster_rcnn_R_50_FPN_3x.yml) | 3x | 45.45 | 40.0 | [model](https://dragon.seetatech.com/download/seetadet/faster_rcnn/coco_faster_rcnn_R_50_FPN_3x/model_ad138077.pkl) &#124; [log](https://dragon.seetatech.com/download/seetadet/faster_rcnn/coco_faster_rcnn_R_50_FPN_3x/logs.json) |

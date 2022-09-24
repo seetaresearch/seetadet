@@ -14,6 +14,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from seetadet.utils.profiler.stats import ExponentialMovingAverage
 from seetadet.utils.profiler.stats import SmoothedValue
 from seetadet.utils.profiler.timer import Timer
 from seetadet.utils.profiler.timer import get_progress

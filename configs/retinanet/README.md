@@ -1,4 +1,4 @@
-# Focal Loss for Dense Object Detection
+# RetinaNet
 
 ## Introduction
 
@@ -16,5 +16,5 @@
 
 | Model | Lr sched | Infer time (s/im) | box AP | Download |
 | :---: | :------: | :---------------: | :----: | :------: |
-| [R50-FPN](coco_retinanet_R_50_FPN_1x.yml) | 1x | - | - | [model]() &#124; [log]() |
-| [R50-FPN](coco_retinanet_R_50_FPN_3x.yml) | 3x | - | - | [model]() &#124; [log]() |
+| [R50-FPN](coco_retinanet_R_50_FPN_1x.yml) | 1x | 38.46 | 36.6 | [model](https://dragon.seetatech.com/download/seetadet/retinanet/coco_retinanet_R_50_FPN_1x/model_d5607eb1.pkl) &#124; [log](https://dragon.seetatech.com/download/seetadet/retinanet/coco_retinanet_R_50_FPN_1x/logs.json) |
+| [R50-FPN](coco_retinanet_R_50_FPN_3x.yml) | 3x | 38.46 | 38.6 | [model](https://dragon.seetatech.com/download/seetadet/retinanet/coco_retinanet_R_50_FPN_3x/model_d82140f3.pkl) &#124; [log](https://dragon.seetatech.com/download/seetadet/retinanet/coco_retinanet_R_50_FPN_3x/logs.json) |

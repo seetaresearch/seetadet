@@ -33,7 +33,7 @@ def build_loss(loss_type, reduction='sum', **kwargs):
             'l1': L1Loss,
             'smooth_l1': SmoothL1Loss,
             'giou': GIoULoss,
-            'cross_entroy': nn.CrossEntropyLoss,
+            'cross_entropy': nn.CrossEntropyLoss,
             'sigmoid_focal': SigmoidFocalLoss,
         }[loss_type]
     return loss_type(reduction=reduction, **kwargs)

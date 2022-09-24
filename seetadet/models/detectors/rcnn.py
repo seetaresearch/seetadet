@@ -53,7 +53,7 @@ class FasterRCNN(Detector):
             'grid_info': inputs['grid_info']})
         if self.training:
             targets = self.proposal_targets.compute(**inputs)
-            inputs['rois'] = targets['rois']
+            inputs['rois'] = targets.pop('rois')
             outputs.update(self.bbox_head(inputs, targets))
         else:
             outputs.update(self.bbox_head(inputs))
@@ -128,28 +128,29 @@ class CascadeRCNN(Detector):
             'grid_info': inputs['grid_info']})
         if self.training:
             assigner = self.proposal_targets.assigner
-            outputs['cls_loss'], outputs['bbox_loss'] = [], []
-            mask_targets = {}
+            outputs['cls_loss'], outputs['bbox_loss'], targets = [], [], {}
             for i, bbox_head in enumerate(self.bbox_heads):
                 assigner.pos_iou_thr = assigner.neg_iou_thr = self.cascade_ious[i]
                 self.proposal_targets.bbox_reg_weights = self.bbox_reg_weights[i]
-                targets = self.proposal_targets.compute(**inputs)
+                stage_targets = self.proposal_targets.compute(**inputs)
                 if self.mask_head is not None and 'gt_segms' in inputs:
                     inputs.pop('gt_segms')
                     for k in ('fg_rois', 'mask_inds', 'mask_targets'):
-                        mask_targets[k] = targets.pop(k)
-                proposals, inputs['rois'] = targets['proposals'], targets['rois']
-                outputs_i = bbox_head(inputs, targets)
-                outputs['cls_loss'].append(outputs_i['cls_loss'])
-                outputs['bbox_loss'].append(outputs_i['bbox_loss'])
+                        targets[k] = stage_targets.pop(k)
+                inputs['rois'] = stage_targets.pop('rois')
+                inputs['grad_scale'] = 1. / len(self.bbox_heads)
+                bbox_outputs = bbox_head(inputs, stage_targets)
+                outputs['cls_loss'].append(bbox_outputs['cls_loss'])
+                outputs['bbox_loss'].append(bbox_outputs['bbox_loss'])
                 if i < len(self.bbox_heads) - 1:
+                    proposals = stage_targets.pop('proposals')
                     boxes = bbox_transform_inv(
-                        proposals[:, 1:5], outputs_i['bbox_pred'].numpy(),
+                        proposals[:, 1:5], bbox_outputs['bbox_pred'].numpy(),
                         weights=self.bbox_reg_weights[i])
                     inputs['rois'] = np.hstack((proposals[:, :1], boxes))
             if self.mask_head is not None:
-                inputs['rois'] = mask_targets.pop('fg_rois')
-                outputs.update(self.mask_head(inputs, mask_targets))
+                inputs['rois'] = targets.pop('fg_rois')
+                outputs.update(self.mask_head(inputs, targets))
         else:
             outputs.update(self.bbox_heads[0](inputs))
             self.outputs = {'features': inputs['features'], 'rois': inputs['rois']}

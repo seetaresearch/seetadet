@@ -86,3 +86,21 @@ class PasteMask(object):
             'mask_threshold': kwargs.get('mask_threshold', 0.5),
             'sizes_desc': 'int64',
         })
+
+
+class ScaleGradient(object):
+    """Scale the graidnet of input tensors."""
+
+    @staticmethod
+    def apply(inputs, scale=1.0):
+        if scale == 1.0:
+            return inputs
+        if not isinstance(inputs, (tuple, list)):
+            inputs = [inputs]
+        return autograd.Function.apply(
+            'IdentityScale', inputs[0].device, inputs, scale=float(scale))
+
+    autograd.Function.register(
+        'IdentityScale', lambda **kwargs: {
+            'scale': kwargs.get('scale', 1.0),
+        })

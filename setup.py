@@ -89,8 +89,6 @@ def find_package_data(top):
     headers, libraries = [], []
     if sys.platform == 'win32':
         dylib_suffix = '.pyd'
-    elif sys.platform == 'darwin':
-        dylib_suffix = '.dylib'
     else:
         dylib_suffix = '.so'
     for root, _, files in os.walk(top):
@@ -142,7 +140,7 @@ setuptools.setup(
     description='SeetaDet: A platform implementing popular object detection algorithms.',
     long_description=args.long_description,
     long_description_content_type='text/markdown',
-    url='https://github.seetatech.com/seetaresearch/seetadet',
+    url='https://github.com/seetaresearch/seetadet',
     author='SeetaTech',
     license='BSD 2-Clause',
     packages=find_packages('seetadet'),

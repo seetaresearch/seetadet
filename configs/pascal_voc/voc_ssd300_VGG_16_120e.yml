@@ -45,7 +45,7 @@ TEST:
   DATASET: '../data/datasets/voc_test2007'
   JSON_DATASET: '../data/datasets/voc_test2007.json'
   EVALUATOR: 'voc2007'
-  IMS_PER_BATCH: 8
+  IMS_PER_BATCH: 1
   SCALES: [300]
   NMS_THRESH: 0.45
   SCORE_THRESH: 0.01

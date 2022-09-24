@@ -104,7 +104,7 @@ class Trainer(object):
         for k, v in outputs.items():
             if 'loss' in k:
                 if isinstance(v, (tuple, list)):
-                    losses.append(sum(v[1:], v[0]).mul_(1. / len(v)))
+                    losses.append(sum(v[1:], v[0]))
                     metrics.update(dict(('stage%d_' % (i + 1) + k, float(x))
                                         for i, x in enumerate(v)))
                 else:
