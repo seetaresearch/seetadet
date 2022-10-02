@@ -78,17 +78,6 @@ class Detector(nn.Module):
         """
         return self.get_outputs(inputs)
 
-    def load_weights(self, weights, strict=False):
-        """Load the state dict of this detector.
-
-        Parameters
-        ----------
-        weights : str
-            The path of the weights file.
-
-        """
-        return self.load_state_dict(torch.load(weights), strict=strict)
-
     def optimize_for_inference(self):
         """Optimize the graph for the inference."""
         # Set precision.

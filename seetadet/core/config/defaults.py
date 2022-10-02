@@ -65,7 +65,7 @@ _C.TEST = CfgNode()
 # The test dataset
 _C.TEST.DATASET = ''
 
-# THE JSON format dataset with annotations for evaluation
+# The JSON format dataset with annotations for evaluation
 _C.TEST.JSON_DATASET = ''
 
 # The loader type for testing

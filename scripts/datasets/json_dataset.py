@@ -25,7 +25,7 @@ import codewithgpu
 def parse_args():
     """Parse arguments."""
     parser = argparse.ArgumentParser(
-        description='Prepare PASCAL VOC datasets')
+        description='Prepare JSON datasets')
     parser.add_argument(
         '--rec',
         default=None,

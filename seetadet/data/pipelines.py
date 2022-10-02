@@ -135,7 +135,6 @@ class MaskTrainWorker(WorkerBase):
                    'gt_boxes': [boxes],
                    'gt_segms': [segms],
                    'im_info': [img.shape[:2] + (im_scale,)],
-                   'scale_jitter': [self.resize.scale_jitter],
                    'aspect_ratio': [aspect_ratio]}
         if self.anchor_sampler is not None:
             data = self.anchor_sampler.sample(boxes)

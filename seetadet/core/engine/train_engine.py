@@ -27,6 +27,7 @@ from seetadet.core.engine.build import build_tensorboard
 from seetadet.core.engine.utils import count_params
 from seetadet.core.engine.utils import get_device
 from seetadet.core.engine.utils import get_param_groups
+from seetadet.core.engine.utils import load_weights
 from seetadet.data.build import build_loader_train
 from seetadet.models.build import build_detector
 from seetadet.utils import logging
@@ -41,7 +42,7 @@ class Trainer(object):
         self.loader = build_loader_train()
         # Build model.
         self.model = build_detector(training=True)
-        self.model.load_weights(cfg.TRAIN.WEIGHTS, strict=start_iter > 0)
+        load_weights(self.model, cfg.TRAIN.WEIGHTS, strict=start_iter > 0)
         self.model.to(device=get_device(cfg.GPU_ID))
         if cfg.MODEL.PRECISION.lower() == 'float16':
             self.model.half()

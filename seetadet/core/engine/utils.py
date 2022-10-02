@@ -23,9 +23,10 @@ from dragon.core.framework import backend
 from dragon.vm import torch
 
 
-def count_params(module):
+def count_params(module, trainable=None):
     """Return the number of parameters in MB."""
-    return sum([v.size().numel() for v in module.parameters()]) / 1e6
+    return sum([v.size().numel() for v in module.parameters()
+                if (v.requires_grad or (not trainable))]) / 1e6
 
 
 def freeze_module(module):
@@ -81,6 +82,19 @@ def load_library(library_prefix):
         raise ImportError('Could not find the pre-built library '
                           'for <%s>.' % library_prefix)
     backend.load_library(ext_specs.origin)
+
+
+def load_weights(module, weights_file, prefix_removed='', strict=True):
+    """Load a weights file."""
+    if not weights_file:
+        return module._IncompatibleKeys([], [])
+    state_dict = torch.load(weights_file)
+    if prefix_removed:
+        new_state_dict = type(state_dict)()
+        for k in list(state_dict.keys()):
+            new_state_dict[k.replace(prefix_removed, '')] = state_dict.pop(k)
+        state_dict = new_state_dict
+    return module.load_state_dict(state_dict, strict=strict)
 
 
 def synchronize_device(device):

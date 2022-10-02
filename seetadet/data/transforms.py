@@ -176,9 +176,10 @@ class RandomPaste(Transform):
 class RandomCrop(Transform):
     """Crop the image randomly."""
 
-    def __init__(self, crop_size=512):
+    def __init__(self, crop_size=512, pad=True):
         super(RandomCrop, self).__init__()
         self.crop_size = crop_size
+        self.pad = pad
         self.pixel_mean = cfg.MODEL.PIXEL_MEAN
 
     def __call__(self, img, boxes=None, segms=None):
@@ -189,11 +190,13 @@ class RandomCrop(Transform):
         out_h, out_w = (self.crop_size,) * 2
         y = npr.randint(max(h - out_h, 0) + 1)
         x = npr.randint(max(w - out_w, 0) + 1)
-        im_shape[:2] = (out_h, out_w)
-        out_img = np.empty(im_shape, img.dtype)
-        out_img[:] = self.pixel_mean
-        out_img[:h, :w] = img[y:y + out_h, x:x + out_w]
-        img = out_img
+        if self.pad:
+            out_img = np.empty([out_h, out_w] + im_shape[2:], img.dtype)
+            out_img[:] = self.pixel_mean
+            out_img[:h, :w] = img[y:y + out_h, x:x + out_w]
+            img = out_img
+        else:
+            img = img[y:y + out_h, x:x + out_w]
         if boxes is not None:
             boxes[:, (0, 2)] -= x
             boxes[:, (1, 3)] -= y

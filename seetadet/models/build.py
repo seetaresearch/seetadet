@@ -19,6 +19,7 @@ from dragon.vm.torch import nn
 from seetadet.core.config import cfg
 from seetadet.core.registry import Registry
 from seetadet.core.engine.utils import get_device
+from seetadet.core.engine.utils import load_weights
 
 BACKBONES = Registry('backbones')
 NECKS = Registry('necks')
@@ -52,10 +53,7 @@ def build_detector(device=None, weights=None, training=False):
 
     """
     model = DETECTORS.get(cfg.MODEL.TYPE)()
-    if model is None:
-        raise ValueError('Unknown detector: ' + cfg.MODEL.TYPE)
-    if weights is not None:
-        model.load_weights(weights, strict=True)
+    load_weights(model, weights)
     if device is not None:
         model.to(device=get_device(device))
     if not training:
