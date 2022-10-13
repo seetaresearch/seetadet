@@ -21,13 +21,21 @@ from dragon.vm.torch import nn
 from seetadet.core.config import cfg
 
 
+def reduce_loss(loss, reduction='mean'):
+    """Reduce the loss."""
+    if reduction == 'mean' or reduction == 'sum':
+        return getattr(loss, reduction)()
+    return loss
+
+
 class GIoULoss(nn.Module):
     """GIoU loss."""
 
-    def __init__(self, reduction='sum', delta_weights=None):
+    def __init__(self, transform_type=None, eps=1e-7, reduction='sum'):
         super(GIoULoss, self).__init__()
+        self.transform_type = transform_type
+        self.eps = eps
         self.reduction = reduction
-        self.delta_weights = delta_weights
 
     def transform_inv(self, boxes, deltas):
         widths = boxes[:, 2:3] - boxes[:, 0:1]
@@ -35,9 +43,6 @@ class GIoULoss(nn.Module):
         ctr_x = boxes[:, 0:1] + 0.5 * widths
         ctr_y = boxes[:, 1:2] + 0.5 * heights
         dx, dy, dw, dh = torch.chunk(deltas, chunks=4, dim=1)
-        if self.delta_weights is not None:
-            wx, wy, ww, wh = self.delta_weights
-            dx, dy, dw, dh = dx / wx, dy / wy, dw / ww, dh / wh
         pred_ctr_x = dx * widths + ctr_x
         pred_ctr_y = dy * heights + ctr_y
         pred_w = torch.exp(dw) * widths
@@ -48,35 +53,45 @@ class GIoULoss(nn.Module):
         y2 = pred_ctr_y + 0.5 * pred_h
         return x1, y1, x2, y2
 
+    def linear_transform_inv(self, boxes, deltas):
+        widths = boxes[:, 2:3] - boxes[:, 0:1]
+        heights = boxes[:, 3:4] - boxes[:, 1:2]
+        ctr_x = boxes[:, 0:1] + 0.5 * widths
+        ctr_y = boxes[:, 1:2] + 0.5 * heights
+        strides = torch.cat([widths, heights, widths, heights], dim=1)
+        deltas = deltas.clamp(min=0) * strides
+        l, t, r, b = torch.chunk(deltas, chunks=4, dim=1)
+        x1, y1, x2, y2 = ctr_x - l, ctr_y - t, ctr_x + r, ctr_y + b
+        return x1, y1, x2, y2
+
     def forward_impl(self, input, target, anchor):
-        x1, y1, x2, y2 = self.transform_inv(anchor, input)
-        x1_, y1_, x2_, y2_ = self.transform_inv(anchor, target)
+        inv_func = self.transform_inv
+        if self.transform_type == 'linear':
+            inv_func = self.linear_transform_inv
+        x1, y1, x2, y2 = inv_func(anchor, input)
+        x1g, y1g, x2g, y2g = inv_func(anchor, target)
         # Compute the independent area.
         pred_area = (x2 - x1) * (y2 - y1)
-        target_area = (x2_ - x1_) * (y2_ - y1_)
+        target_area = (x2g - x1g) * (y2g - y1g)
         # Compute the intersecting area.
-        x1_inter = torch.maximum(x1, x1_)
-        y1_inter = torch.maximum(y1, y1_)
-        x2_inter = torch.minimum(x2, x2_)
-        y2_inter = torch.minimum(y2, y2_)
+        x1_inter = torch.maximum(x1, x1g)
+        y1_inter = torch.maximum(y1, y1g)
+        x2_inter = torch.minimum(x2, x2g)
+        y2_inter = torch.minimum(y2, y2g)
         w_inter = torch.clamp(x2_inter - x1_inter, min=0)
         h_inter = torch.clamp(y2_inter - y1_inter, min=0)
         area_inter = w_inter * h_inter
         # Compute the enclosing area.
-        x1_enc = torch.minimum(x1, x1_)
-        y1_enc = torch.minimum(y1, y1_)
-        x2_enc = torch.maximum(x2, x2_)
-        y2_enc = torch.maximum(y2, y2_)
-        area_enc = (x2_enc - x1_enc) * (y2_enc - y1_enc) + 1.
+        x1_enc = torch.minimum(x1, x1g)
+        y1_enc = torch.minimum(y1, y1g)
+        x2_enc = torch.maximum(x2, x2g)
+        y2_enc = torch.maximum(y2, y2g)
+        area_enc = (x2_enc - x1_enc) * (y2_enc - y1_enc)
         # Compute the differentiable IoU metric.
         area_union = pred_area + target_area - area_inter
-        iou = area_inter / (area_union + 1.)
-        iou_metric = iou - (area_enc - area_union) / area_enc
-        # Compute the reduced loss.
-        if self.reduction == 'sum':
-            return (1 - iou_metric).sum()
-        else:
-            return (1 - iou_metric).mean()
+        iou = area_inter / (area_union + self.eps)
+        giou = iou - (area_enc - area_union) / (area_enc + self.eps)
+        return reduce_loss(1.0 - giou.flatten_(), self.reduction)
 
     def forward(self, *inputs, **kwargs):
         with dragon.variable_scope('IoULossVariable'):

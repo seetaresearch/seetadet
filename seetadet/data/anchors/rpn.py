@@ -50,10 +50,17 @@ class AnchorGenerator(object):
         """Return number of cell anchors."""
         return self.cell_anchors[index].shape[0]
 
-    def num_anchors(self, shapes):
+    def num_anchors(self, shapes=None):
         """Return the number of grid anchors."""
+        shapes = shapes or self.grid_shapes
         return sum(self.cell_anchors[i].shape[0] * np.prod(shapes[i])
                    for i in range(len(shapes)))
+
+    def num_anchors_per_stride(self, shapes=None):
+        """Return the number of grid anchors per stride."""
+        shapes = shapes or self.grid_shapes
+        return [self.cell_anchors[i].shape[0] * np.prod(shapes[i])
+                for i in range(len(shapes))]
 
     def get_slices(self, shapes):
         slices, offset = [], 0
@@ -68,7 +75,7 @@ class AnchorGenerator(object):
         xs, ys = [], []
         for i in range(len(shapes)):
             height, width = shapes[i]
-            x, y = np.arange(0, width), np.arange(0, height)
+            x, y = np.arange(width), np.arange(height)
             x, y = np.meshgrid(x, y)
             # Add A anchors (A,) to cell K shifts (K,)
             # to get shift coords (A, K)
@@ -81,8 +88,8 @@ class AnchorGenerator(object):
         grid_anchors = []
         for i in range(len(shapes)):
             h, w = shapes[i]
-            shift_x = np.arange(0, w) * self.strides[i]
-            shift_y = np.arange(0, h) * self.strides[i]
+            shift_x = np.arange(w) * self.strides[i]
+            shift_y = np.arange(h) * self.strides[i]
             shift_x, shift_y = np.meshgrid(shift_x, shift_y)
             shifts = np.vstack((shift_x.ravel(), shift_y.ravel(),
                                 shift_x.ravel(), shift_y.ravel())).transpose()
@@ -95,10 +102,9 @@ class AnchorGenerator(object):
             grid_anchors.append(anchors.reshape((a * k, 4)))
         return np.vstack(grid_anchors)
 
-    def narrow_anchors(self, shapes, inds, return_anchors=False):
+    def narrow_anchors(self, shapes, inds, anchors=None):
         """Return the valid anchors on given shapes."""
         max_shapes = self.grid_shapes
-        anchors = self.grid_anchors
         x_coords, y_coords = self.grid_coords
         offset1 = offset2 = num1 = num2 = 0
         out_inds, out_anchors = [], []
@@ -106,16 +112,16 @@ class AnchorGenerator(object):
             num1 += self.num_cell_anchors(i) * np.prod(max_shapes[i])
             num2 += self.num_cell_anchors(i) * np.prod(shapes[i])
             inds_keep = inds[np.where((inds >= offset1) & (inds < num1))[0]]
-            anchors_keep = anchors[inds_keep] if return_anchors else None
+            anchors_keep = anchors[inds_keep] if anchors is not None else None
             x, y = x_coords[inds_keep], y_coords[inds_keep]
             z = ((inds_keep - offset1) // max_shapes[i][1]) // max_shapes[i][0]
             keep = np.where((x < shapes[i][1]) & (y < shapes[i][0]))[0]
             inds_keep = (z * shapes[i][0] + y) * shapes[i][1] + x + offset2
             out_inds.append(inds_keep[keep])
-            out_anchors.append(anchors_keep[keep] if return_anchors else None)
+            out_anchors.append(anchors_keep[keep] if anchors is not None else None)
             offset1, offset2 = num1, num2
         outputs = [np.concatenate(out_inds)]
-        if return_anchors:
+        if anchors is not None:
             outputs += [np.concatenate(out_anchors)]
         return outputs[0] if len(outputs) == 1 else outputs
 

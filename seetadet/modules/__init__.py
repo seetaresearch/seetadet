@@ -14,6 +14,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from seetadet.modules import dense
 from seetadet.modules import rcnn
-from seetadet.modules import retinanet
 from seetadet.modules import ssd

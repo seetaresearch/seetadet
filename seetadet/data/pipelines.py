@@ -96,11 +96,11 @@ class DetTrainWorker(WorkerBase):
         return outputs
 
 
-class MaskTrainWorker(WorkerBase):
+class InstSegTrainWorker(WorkerBase):
     """Generic train pipeline for instance segmentation."""
 
     def __init__(self, **kwargs):
-        super(MaskTrainWorker, self).__init__()
+        super(InstSegTrainWorker, self).__init__()
         self.parse_boxes = transforms.ParseBoxes()
         self.parse_segms = transforms.ParseSegms()
         self.resize = transforms.RandomResize(
@@ -195,6 +195,6 @@ class DetTestWorker(WorkerBase):
 
 
 LOADERS.register('det_train', DataLoader, worker=DetTrainWorker)
-LOADERS.register('mask_train', DataLoader, worker=MaskTrainWorker)
+LOADERS.register('instseg_train', DataLoader, worker=InstSegTrainWorker)
 LOADERS.register('ssd_train', DataLoader, worker=SSDTrainWorker)
 LOADERS.register('det_test', DataLoader, worker=DetTestWorker)

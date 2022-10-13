@@ -8,6 +8,7 @@
 #     <https://opensource.org/licenses/BSD-2-Clause>
 #
 # ------------------------------------------------------------
+"""Generate targets for RetinaNet head."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -18,9 +19,9 @@ import collections
 import numpy as np
 
 from seetadet.core.config import cfg
-from seetadet.data.build import ANCHOR_SAMPLERS
 from seetadet.data.anchors.rpn import AnchorGenerator
 from seetadet.data.assigners import MaxIoUAssigner
+from seetadet.data.build import ANCHOR_SAMPLERS
 from seetadet.ops.normalization import to_tensor
 from seetadet.utils.bbox import bbox_overlaps
 from seetadet.utils.bbox import bbox_transform
@@ -62,6 +63,7 @@ class AnchorTargets(object):
         shapes = [x[:2] for x in inputs['grid_info']]
         num_images = len(inputs['gt_boxes'])
         num_anchors = self.generator.num_anchors(shapes)
+        grid_anchors = self.generator.grid_anchors
         blobs = collections.defaultdict(list)
         # "1" is positive, "0" is negative, "-1" is don't care.
         labels = np.zeros((num_images, num_anchors), 'int64')
@@ -70,15 +72,15 @@ class AnchorTargets(object):
             ignore_inds = inputs['bg_inds'][i]
             # Narrow anchors to match the feature layout.
             ignore_inds = self.generator.narrow_anchors(shapes, ignore_inds)
-            fg_inds, anchors = self.generator.narrow_anchors(shapes, fg_inds, True)
+            fg_inds, anchors = self.generator.narrow_anchors(shapes, fg_inds, grid_anchors)
             # Compute bbox targets.
-            gt_assignments = bbox_overlaps(anchors, gt_boxes).argmax(axis=1)
-            bbox_targets = bbox_transform(anchors, gt_boxes[gt_assignments, :4])
+            gt_inds = bbox_overlaps(anchors, gt_boxes).argmax(axis=1)
+            bbox_targets = bbox_transform(anchors, gt_boxes[gt_inds, :4])
             blobs['bbox_anchors'].append(anchors)
             blobs['bbox_targets'].append(bbox_targets)
             # Compute label assignments.
             labels[i, ignore_inds] = -1
-            labels[i, fg_inds] = gt_boxes[gt_assignments, 4]
+            labels[i, fg_inds] = gt_boxes[gt_inds, 4]
             # Compute sparse indices.
             fg_inds += i * num_anchors
             blobs['bbox_inds'].extend([fg_inds])

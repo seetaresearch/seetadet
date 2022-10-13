@@ -65,13 +65,14 @@ class AnchorTargets(object):
         """Compute anchor targets."""
         shapes = [x[:2] for x in inputs['grid_info']]
         num_anchors = self.generator.num_anchors(shapes)
+        grid_anchors = self.generator.grid_anchors
         blobs = collections.defaultdict(list)
         for i, gt_boxes in enumerate(inputs['gt_boxes']):
             fg_inds = inputs['fg_inds'][i]
             bg_inds = inputs['bg_inds'][i]
             # Narrow anchors to match the feature layout.
             bg_inds = self.generator.narrow_anchors(shapes, bg_inds)
-            fg_inds, anchors = self.generator.narrow_anchors(shapes, fg_inds, True)
+            fg_inds, anchors = self.generator.narrow_anchors(shapes, fg_inds, grid_anchors)
             num_fg = int(cfg.RPN.POSITIVE_FRACTION * cfg.RPN.BATCH_SIZE)
             if len(fg_inds) > num_fg:
                 keep = npr.choice(np.arange(len(fg_inds)), num_fg, False)
@@ -81,8 +82,8 @@ class AnchorTargets(object):
             if len(bg_inds) > num_bg:
                 bg_inds = npr.choice(bg_inds, num_bg, False)
             # Compute bbox targets.
-            gt_assignments = bbox_overlaps(anchors, gt_boxes).argmax(axis=1)
-            bbox_targets = bbox_transform(anchors, gt_boxes[gt_assignments, :4])
+            gt_inds = bbox_overlaps(anchors, gt_boxes).argmax(axis=1)
+            bbox_targets = bbox_transform(anchors, gt_boxes[gt_inds, :4])
             blobs['bbox_anchors'].append(anchors)
             blobs['bbox_targets'].append(bbox_targets)
             # Compute sparse indices.

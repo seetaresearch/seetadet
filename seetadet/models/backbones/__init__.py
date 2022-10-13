@@ -19,3 +19,4 @@ from seetadet.models.backbones import mobilenet_v2
 from seetadet.models.backbones import mobilenet_v3
 from seetadet.models.backbones import resnet
 from seetadet.models.backbones import vgg
+from seetadet.models.backbones import vit

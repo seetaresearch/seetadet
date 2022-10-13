@@ -91,6 +91,7 @@ Results and models are available in the [Model Zoo](MODEL_ZOO.md).
             <li><a href="configs/pascal_voc">SSD (ECCV'2016)</a></li>
             <li><a href="configs/retinanet">RetinaNet (ICCV'2017)</a></li>
             <li><a href="configs/cascade_rcnn">Cascade R-CNN (CVPR'2018)</a></li>
+            <li><a href="configs/fcos">FCOS (ICCV'2019)</a></li>
         </ul>
       </td>
       <td>
@@ -128,6 +129,7 @@ Results and models are available in the [Model Zoo](MODEL_ZOO.md).
           <li>ResNet (CVPR'2016)</li>
           <li>MobileNetV2 (CVPR'2018)</li>
           <li>MobileNetV3 (ICCV'2019)</li>
+          <li><a href="configs/vitdet">ViTDet (ArXiv'2022)</li>
         </ul>
       </td>
       <td>

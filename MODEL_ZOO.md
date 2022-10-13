@@ -25,5 +25,11 @@ Refer to [RetinaNet](configs/retinanet) for details.
 ### Cascade R-CNN
 Refer to [Cascade R-CNN](configs/cascade_rcnn) for details.
 
+### FCOS
+Refer to [FCOS](configs/fcos) for details.
+
+### ViTDet
+Refer to [ViTDet](configs/vitdet) for details.
+
 ### Pascal VOC
 Refer to [Pascal VOC](configs/pascal_voc) for details.

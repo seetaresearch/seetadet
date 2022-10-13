@@ -45,7 +45,7 @@ SOLVER:
 TRAIN:
   WEIGHTS: '' # Train from scratch.
   DATASET: '../data/datasets/coco_train2017'
-  LOADER: 'mask_train'
+  LOADER: 'instseg_train'
   IMS_PER_BATCH: 8
   SCALES: [1024]
   SCALES_RANGE: [0.1, 2.0]

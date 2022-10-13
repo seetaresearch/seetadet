@@ -34,6 +34,7 @@ class FPN(nn.Module):
         output_conv_module = functools.partial(
             ConvNorm2d, norm_type=cfg.FPN.NORM, conv_type=cfg.FPN.CONV)
         self.dim = cfg.FPN.DIM
+        self.model_type = cfg.MODEL.TYPE
         self.min_lvl = cfg.FPN.MIN_LEVEL
         self.max_lvl = cfg.FPN.MAX_LEVEL
         self.fuse_lvl = cfg.FPN.FUSE_LEVEL
@@ -45,9 +46,10 @@ class FPN(nn.Module):
         for dim in in_dims[self.min_lvl - 1:self.highest_lvl]:
             self.lateral_conv += [lateral_conv_module(dim, self.dim, 1)]
             self.output_conv += [output_conv_module(self.dim, self.dim, 3)]
-        if 'rcnn' not in cfg.MODEL.TYPE:
+        if 'rcnn' not in self.model_type:
             for lvl in range(self.highest_lvl + 1, self.max_lvl + 1):
                 dim = in_dims[-1] if lvl == self.highest_lvl + 1 else self.dim
+                dim = self.dim if self.model_type == 'fcos' else dim
                 self.output_conv += [output_conv_module(dim, self.dim, 3, stride=2)]
 
     def forward(self, features):
@@ -63,7 +65,10 @@ class FPN(nn.Module):
             for _ in range(len(outputs), len(self.out_dims)):
                 outputs.append(nn.functional.max_pool2d(outputs[-1], 1, stride=2))
         else:
-            outputs.append(self.output_conv[len(outputs)](features[-1]))
+            in_feature = features[-1]
+            if self.model_type == 'fcos':
+                in_feature = outputs[-1]
+            outputs.append(self.output_conv[len(outputs)](in_feature))
             for i in range(len(outputs), len(self.out_dims)):
                 outputs.append(self.output_conv[i](nn.functional.relu(outputs[-1])))
         return outputs

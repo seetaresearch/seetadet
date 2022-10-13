@@ -18,29 +18,47 @@ MODEL:
             'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
             'teddy bear', 'hair drier', 'toothbrush']
 BACKBONE:
-  TYPE: 'resnet50_v1a.fpn'
+  TYPE: 'vit_base_patch16_window16.fpn'
+  NORM: 'SyncBN'
+  DROP_PATH_RATE: 0.1
 FPN:
   MIN_LEVEL: 2
   MAX_LEVEL: 6
+  FUSE_LEVEL: 2
+  NORM: 'SyncBN'
 ANCHOR_GENERATOR:
   STRIDES: [4, 8, 16, 32, 64]
+RPN:
+  NUM_CONV: 2
+FAST_RCNN:
+  NUM_CONV: 4
+  NUM_FC: 1
+  NORM: 'SyncBN'
+MASK_RCNN:
+  NORM: 'SyncBN'
 SOLVER:
-  BASE_LR: 0.02
-  DECAY_STEPS: [60000, 80000]
-  MAX_STEPS: 90000
-  SNAPSHOT_EVERY: 5000
-  SNAPSHOT_PREFIX: 'coco_mask_rcnn_R_50_FPN'
+  BASE_LR: 0.0001
+  OPTIMIZER: 'AdamW'
+  WEIGHT_DECAY: 0.1
+  LAYER_LR_DECAY: 0.7
+  DECAY_STEPS: [81944, 88773]
+  MAX_STEPS: 92187
+  SNAPSHOT_EVERY: 1250
+  SNAPSHOT_PREFIX: 'coco_mask_rcnn_vitdet_b'
 TRAIN:
-  WEIGHTS: '../data/pretrained/R-50-A_in1k_cls120e.pkl'
+  WEIGHTS: '../data/pretrained/ViT-B16_in1k_mae1600e.pkl'
   DATASET: '../data/datasets/coco_train2017'
   LOADER: 'instseg_train'
-  IMS_PER_BATCH: 2
-  SCALES: [640, 672, 704, 736, 768, 800]
-  MAX_SIZE: 1333
+  IMS_PER_BATCH: 8
+  SCALES: [1024]
+  SCALES_RANGE: [0.1, 2.0]
+  MAX_SIZE: 1024
+  CROP_SIZE: 1024
 TEST:
   DATASET: '../data/datasets/coco_val2017'
   JSON_DATASET: '../data/datasets/coco_instances_val2017.json'
   EVALUATOR: 'coco'
   IMS_PER_BATCH: 1
-  SCALES: [800]
-  MAX_SIZE: 1333
+  SCALES: [1024]
+  MAX_SIZE: 1024
+  CROP_SIZE: 1024

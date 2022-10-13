@@ -8,7 +8,7 @@
 #     <https://opensource.org/licenses/BSD-2-Clause>
 #
 # ------------------------------------------------------------
-"""RetinaNet modules."""
+"""Dense modules."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -24,12 +24,12 @@ from seetadet.utils.image import im_rescale
 from seetadet.utils.nms import nms
 
 
-@InferenceModule.register('retinanet')
-class RetinaNetInference(InferenceModule):
-    """RetinaNet inference module."""
+@InferenceModule.register(['retinanet', 'fcos'])
+class DenseInference(InferenceModule):
+    """Dense inference module."""
 
     def __init__(self, model):
-        super(RetinaNetInference, self).__init__(model)
+        super(DenseInference, self).__init__(model)
         self.forward_model = self.trace(
             'forward_eval', lambda self, img, im_info, grid_info:
             self.forward({'img': img, 'im_info': im_info,

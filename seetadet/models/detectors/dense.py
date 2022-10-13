@@ -8,14 +8,16 @@
 #     <https://opensource.org/licenses/BSD-2-Clause>
 #
 # ------------------------------------------------------------
-"""RetinaNet detector."""
+"""Dense detectors."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from seetadet.core.config import cfg
 from seetadet.models.build import DETECTORS
-from seetadet.models.decoders.retinanet import RetinaNetDecoder
+from seetadet.models.decoders.dense import DenseDecoder
+from seetadet.models.dense_heads.fcos import FCOSHead
 from seetadet.models.dense_heads.retinanet import RetinaNetHead
 from seetadet.models.detectors.detector import Detector
 
@@ -27,7 +29,9 @@ class RetinaNet(Detector):
     def __init__(self):
         super(RetinaNet, self).__init__()
         self.bbox_head = RetinaNetHead(self.backbone_dims)
-        self.bbox_decoder = RetinaNetDecoder()
+        self.bbox_decoder = DenseDecoder(
+            pre_nms_topk=cfg.RETINANET.PRE_NMS_TOPK,
+            scales_per_octave=3)
 
     def get_outputs(self, inputs):
         """Compute detection outputs."""
@@ -43,3 +47,15 @@ class RetinaNet(Detector):
                 'im_info': inputs['im_info'],
                 'grid_info': inputs['grid_info']})
         return outputs
+
+
+@DETECTORS.register('fcos')
+class FCOS(RetinaNet):
+    """FCOS detector."""
+
+    def __init__(self):
+        super(FCOS, self).__init__()
+        self.bbox_head = FCOSHead(self.backbone_dims)
+        self.bbox_decoder = DenseDecoder(
+            pre_nms_topk=cfg.FCOS.PRE_NMS_TOPK,
+            transform_type='linear')

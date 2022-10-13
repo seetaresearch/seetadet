@@ -251,7 +251,7 @@ if __name__ == '__main__':
             'batch_timeout': args.batch_timeout,
             'verbose': i == 0,
         }) for i in range(num_devices)]
-    commands += [ServingCommand(queues[-1])]
+    commands += [ServingCommand(queues[-1], score_thresh=args.score_thresh)]
     actors = [mp.Process(target=command.run) for command in commands]
     for actor in actors:
         actor.start()

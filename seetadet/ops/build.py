@@ -29,6 +29,8 @@ def build_loss(loss_type, reduction='sum', **kwargs):
         loss_type = loss_type.lower()
         if loss_type != 'smooth_l1':
             kwargs.pop('beta', None)
+        if loss_type != 'giou':
+            kwargs.pop('transform_type', None)
         loss_type = {
             'l1': L1Loss,
             'smooth_l1': SmoothL1Loss,

@@ -8,7 +8,6 @@
 #     <https://opensource.org/licenses/BSD-2-Clause>
 #
 # ------------------------------------------------------------
-"""Generate targets for SSD head."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -19,15 +18,15 @@ import collections
 import numpy as np
 
 from seetadet.core.config import cfg
-from seetadet.data.anchors.ssd import AnchorGenerator
-from seetadet.data.assigners import MaxIoUAssigner
+from seetadet.data.anchors.rpn import AnchorGenerator
+from seetadet.data.assigners import CenterAssigner
 from seetadet.data.build import ANCHOR_SAMPLERS
 from seetadet.ops.normalization import to_tensor
-from seetadet.utils.bbox import bbox_overlaps
-from seetadet.utils.bbox import bbox_transform
+from seetadet.utils.bbox import bbox_ctrness
+from seetadet.utils.bbox import bbox_linear_transform
 
 
-@ANCHOR_SAMPLERS.register('ssd')
+@ANCHOR_SAMPLERS.register('fcos')
 class AnchorTargets(object):
     """Generate ground-truth targets for anchors."""
 
@@ -37,48 +36,46 @@ class AnchorTargets(object):
             strides=cfg.ANCHOR_GENERATOR.STRIDES,
             sizes=cfg.ANCHOR_GENERATOR.SIZES,
             aspect_ratios=cfg.ANCHOR_GENERATOR.ASPECT_RATIOS)
-        self.assigner = MaxIoUAssigner(
-            pos_iou_thr=cfg.SSD.POSITIVE_OVERLAP,
-            neg_iou_thr=cfg.SSD.NEGATIVE_OVERLAP,
-            gt_max_assign_all=False)
-        self.neg_pos_ratio = (1.0 / cfg.SSD.POSITIVE_FRACTION) - 1.0
-        max_size = cfg.ANCHOR_GENERATOR.STRIDES[-1]
+        self.assigner = CenterAssigner(
+            center_sampling_radius=cfg.FCOS.CENTER_SAMPLING_RADIUS,
+            corner_sampling_radius=cfg.FCOS.CORNER_SAMPLING_RADIUS)
+        max_size = max(cfg.TRAIN.MAX_SIZE, max(cfg.TRAIN.SCALES))
+        if cfg.BACKBONE.COARSEST_STRIDE > 0:
+            stride = float(cfg.BACKBONE.COARSEST_STRIDE)
+            max_size = int(np.ceil(max_size / stride) * stride)
         self.generator.reset_grid(max_size)
 
     def sample(self, gt_boxes):
         """Sample positive and negative anchors."""
         anchors = self.generator.grid_anchors
-        # Assign ground-truth according to the IoU.
-        labels = self.assigner.assign(anchors, gt_boxes)
-        # Select positive and non-positive indices.
-        return {'fg_inds': np.where(labels > 0)[0],
-                'bg_inds': np.where(labels <= 0)[0]}
+        # Assign ground-truth according to the center.
+        num_anchors = self.generator.num_anchors_per_stride()
+        labels, gt_inds = self.assigner.assign(anchors, gt_boxes, num_anchors)
+        # Select foreground indices.
+        return {'fg_inds': np.where(labels > 0)[0], 'gt_inds': gt_inds}
 
     def compute(self, **inputs):
         """Compute anchor targets."""
+        shapes = [x[:2] for x in inputs['grid_info']]
         num_images = len(inputs['gt_boxes'])
-        num_anchors = self.generator.grid_anchors.shape[0]
-        cls_score = inputs['cls_score'].numpy().astype('float32')
+        num_anchors = self.generator.num_anchors(shapes)
+        grid_anchors = self.generator.grid_anchors
         blobs = collections.defaultdict(list)
-        # "1" is positive, "0" is negative, "-1" is don't care
-        labels = np.full((num_images, num_anchors,), -1, 'int64')
+        # "1" is positive, "0" is negative, "-1" is don't care.
+        labels = np.zeros((num_images, num_anchors), 'int64')
         for i, gt_boxes in enumerate(inputs['gt_boxes']):
-            fg_inds = pos_inds = inputs['fg_inds'][i]
-            neg_inds = inputs['bg_inds'][i]
-            # Mining hard negatives as background.
-            num_pos, num_neg = len(pos_inds), len(neg_inds)
-            num_bg = min(int(num_pos * self.neg_pos_ratio), num_neg)
-            neg_score = cls_score[i, neg_inds, 0]
-            bg_inds = neg_inds[np.argsort(neg_score)][:num_bg]
+            fg_inds = inputs['fg_inds'][i]
+            gt_inds = inputs['gt_inds'][i]
+            # Narrow anchors to match the feature layout.
+            _, gt_inds = self.generator.narrow_anchors(shapes, fg_inds, gt_inds)
+            fg_inds, anchors = self.generator.narrow_anchors(shapes, fg_inds, grid_anchors)
             # Compute bbox targets.
-            anchors = self.generator.grid_anchors[fg_inds]
-            gt_inds = bbox_overlaps(anchors, gt_boxes).argmax(axis=1)
-            bbox_targets = bbox_transform(anchors, gt_boxes[gt_inds, :4],
-                                          weights=cfg.SSD.BBOX_REG_WEIGHTS)
+            bbox_targets = bbox_linear_transform(anchors, gt_boxes[gt_inds, :4])
+            ctrness_targets = bbox_ctrness(anchors, gt_boxes[gt_inds, :4])
             blobs['bbox_anchors'].append(anchors)
             blobs['bbox_targets'].append(bbox_targets)
+            blobs['ctrness_targets'].append(ctrness_targets)
             # Compute label assignments.
-            labels[i, bg_inds] = 0
             labels[i, fg_inds] = gt_boxes[gt_inds, 4]
             # Compute sparse indices.
             fg_inds += i * num_anchors
@@ -89,4 +86,5 @@ class AnchorTargets(object):
             'bbox_inds': to_tensor(np.hstack(blobs['bbox_inds'])),
             'bbox_targets': to_tensor(np.vstack(blobs['bbox_targets'])),
             'bbox_anchors': to_tensor(np.vstack(blobs['bbox_anchors'])),
+            'ctrness_targets': to_tensor(np.hstack(blobs['ctrness_targets'])),
         }

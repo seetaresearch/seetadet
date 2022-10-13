@@ -70,6 +70,7 @@ void DecodeDetections(
     const int num_classes,
     const ImageArgs<int64_t>& im_args,
     const GridArgs<int64_t>& grid_args,
+    const string& transform_type,
     const T* scores,
     const T* deltas,
     const int64_t* indices,
@@ -82,16 +83,31 @@ void DecodeDetections(
   const T* offset_dh = deltas + num_anchors * 3;
   for (int i = 0; i < num_dets; ++i) {
     const auto index = (indices[i] + index_min) / num_classes;
-    utils::BBoxTransform(
-        offset_dx[index],
-        offset_dy[index],
-        offset_dw[index],
-        offset_dh[index],
-        T(im_args.w),
-        T(im_args.h),
-        T(im_args.scale_h),
-        T(im_args.scale_w),
-        offset_dets + 1);
+    if (transform_type.empty() || transform_type == "default") {
+      utils::BBoxTransform(
+          offset_dx[index],
+          offset_dy[index],
+          offset_dw[index],
+          offset_dh[index],
+          T(im_args.w),
+          T(im_args.h),
+          T(im_args.scale_h),
+          T(im_args.scale_w),
+          offset_dets + 1);
+    } else if (transform_type == "linear") {
+      utils::BBoxLinearTransform(
+          offset_dx[index], // dl
+          offset_dy[index], // dt
+          offset_dw[index], // dr
+          offset_dh[index], // db
+          T(im_args.w),
+          T(im_args.h),
+          T(im_args.scale_h),
+          T(im_args.scale_w),
+          offset_dets + 1);
+    } else {
+      LOG(FATAL) << "Unsupported transform type: " << transform_type;
+    }
     offset_dets[0] = T(im_args.batch_ind);
     offset_dets[5] = scores[i];
     offset_dets[6] = T((indices[i] + index_min) % num_classes + 1);

@@ -17,6 +17,9 @@ from __future__ import print_function
 import numpy as np
 
 from seetadet.utils.bbox import bbox_overlaps
+from seetadet.utils.bbox.metrics import boxes_area
+from seetadet.utils.bbox.metrics import boxes_center
+from seetadet.utils.bbox.metrics import boxes_point_dist
 
 
 class MaxIoUAssigner(object):
@@ -82,3 +85,54 @@ class MaxIoUAssigner(object):
 
         # Return the assigned labels for future development.
         return labels
+
+
+class CenterAssigner(object):
+    """Assign ground-truth to boxes according to the center."""
+
+    def __init__(self, center_sampling_radius=1.5, corner_sampling_radius=4.0):
+        """Create a ``CenterAssigner``.
+
+        Parameters
+        ----------
+        center_sampling_radius : float, optional, default=1.5
+            Radius to assign boxes close enough to GT center.
+        corner_sampling_radius : float, optional, default=1.5
+            Radius of assign boxes with the certain size.
+
+        """
+        self.center_sampling_radius = center_sampling_radius
+        self.corner_sampling_radius = corner_sampling_radius
+
+    def assign(self, boxes, gt_boxes, num_boxes=None):
+        centers = boxes_center(boxes)
+        sizes = boxes[:, 2] - boxes[:, 0]
+
+        # Foreground: inside the ground-truth box.
+        corner_dists = boxes_point_dist(gt_boxes, centers)
+        match_quality_matrix = np.min(corner_dists, axis=2) > 0
+
+        # Foreground: inside the center box.
+        if self.center_sampling_radius > 0:
+            gt_centers = boxes_center(gt_boxes)
+            regions = self.center_sampling_radius * sizes[:, None]
+            center_dists = np.abs(centers[:, None, :] - gt_centers[None, :, :])
+            match_quality_matrix &= np.max(center_dists, axis=2) < regions
+
+        # Foreground: with the certain size.
+        if self.corner_sampling_radius > 0 and num_boxes:
+            max_dists = np.max(corner_dists, axis=2)
+            min_sizes = sizes * self.corner_sampling_radius
+            max_sizes = sizes * (self.corner_sampling_radius * 2)
+            min_sizes[:num_boxes[0]], max_sizes[-num_boxes[-1]:] = 0, float('inf')
+            match_quality_matrix &= ((max_dists > min_sizes[:, None]) &
+                                     (max_dists < max_sizes[:, None]))
+
+        match_quality_matrix = match_quality_matrix.astype(gt_boxes.dtype)
+        match_quality_matrix *= 1e8 - boxes_area(gt_boxes)[None, :]
+
+        labels = match_quality_matrix.max(axis=1) >= 1e-5
+        assignments = match_quality_matrix.argmax(axis=1)
+
+        # Return the labels and assignments for future development.
+        return labels.astype(np.int8), assignments

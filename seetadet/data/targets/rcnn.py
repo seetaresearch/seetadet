@@ -8,6 +8,7 @@
 #     <https://opensource.org/licenses/BSD-2-Clause>
 #
 # ------------------------------------------------------------
+"""Generate targets for R-CNN head."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -75,13 +76,13 @@ class ProposalTargets(object):
         keep_inds = np.append(fg_inds, bg_inds)
         rois = rois[keep_inds]
         overlaps = bbox_overlaps(rois[:, 1:5], gt_boxes[:, :4])
-        gt_assignments = overlaps.argmax(axis=1)
-        labels = gt_boxes[gt_assignments, 4].astype('int64')
+        gt_inds = overlaps.argmax(axis=1)
+        labels = gt_boxes[gt_inds, 4].astype('int64')
 
         # Reassign background regions.
         labels[num_fg_rois:] = 0
 
-        return rois, labels, gt_assignments
+        return rois, labels, gt_inds
 
     def distribute_blobs(self, blobs, lvls):
         """Distribute blobs on given levels."""
@@ -119,15 +120,15 @@ class ProposalTargets(object):
             rois[:, 1:5] = clip_boxes(rois[:, 1:5], inputs['im_info'][i][:2])
             rois = rois[filter_empty_boxes(rois[:, 1:5])]
             # Sample a batch of RoIs for training.
-            rois, labels, gt_assignments = self.sample_rois(rois, gt_boxes)
+            rois, labels, gt_inds = self.sample_rois(rois, gt_boxes)
             # Fill blobs.
             blobs['rois'].append(rois)
             blobs['labels'].append(labels)
             blobs['bbox_targets'].append(self.get_bbox_targets(
-                rois[:, 1:5], gt_boxes[gt_assignments, :4]))
+                rois[:, 1:5], gt_boxes[gt_inds, :4]))
             if 'gt_segms' in inputs:
                 fg_inds = np.where(labels > 0)[0]
-                segms = inputs['gt_segms'][i][gt_assignments]
+                segms = inputs['gt_segms'][i][gt_inds]
                 targets = self.get_mask_targets(rois[:, 1:5], segms, fg_inds)
                 blobs['mask_targets'].append(targets)
 

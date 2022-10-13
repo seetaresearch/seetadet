@@ -57,6 +57,9 @@ _C.TRAIN.USE_DIFF = False
 # The probability to distort the color
 _C.TRAIN.COLOR_JITTER = 0.0
 
+# Compress the memory via checkpointing or not
+_C.TRAIN.COMPRESS_MEMORY = False
+
 # ------------------------------------------------------------
 # Testing options
 # ------------------------------------------------------------
@@ -175,7 +178,6 @@ _C.FPN.FUSE_TYPE = 'sum'
 # ------------------------------------------------------------
 # Anchor generator options
 # ------------------------------------------------------------
-
 _C.ANCHOR_GENERATOR = CfgNode()
 
 # The stride of each level
@@ -362,6 +364,38 @@ _C.CASCADE_RCNN.BBOX_REG_WEIGHTS = (
     (20.0, 20.0, 10.0, 10.0),
     (30.0, 30.0, 15.0, 15.0),
 )
+
+# ------------------------------------------------------------
+# FCOS options
+# ------------------------------------------------------------
+_C.FCOS = CfgNode()
+
+# Number of conv layers to stack in the head
+_C.FCOS.NUM_CONV = 4
+
+# The head conv module
+_C.FCOS.CONV = 'Conv2d'
+
+# The head normalization module
+_C.FCOS.NORM = 'GN'
+
+# The head activation module
+_C.FCOS.ACTIVATION = 'ReLU'
+
+# Radius of stride to sample positive anchors close enough to GT center
+_C.FCOS.CENTER_SAMPLING_RADIUS = 1.5
+
+# Radius of stride to sample positive anchors with the certain size
+_C.FCOS.CORNER_SAMPLING_RADIUS = 4.0
+
+# Number of top scoring boxes to keep before NMS
+_C.FCOS.PRE_NMS_TOPK = 1000
+
+# The bbox regression loss type
+_C.FCOS.BBOX_REG_LOSS_TYPE = 'giou'
+
+# The weight for bbox regression loss
+_C.FCOS.BBOX_REG_LOSS_WEIGHT = 1.0
 
 # ------------------------------------------------------------
 # SSD options

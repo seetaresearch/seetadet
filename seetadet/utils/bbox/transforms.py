@@ -20,7 +20,7 @@ _DEFAULT_SCALE_CLIP = np.log(1000.0 / 16.0)
 
 
 def bbox_transform(src_boxes, tgt_boxes, weights=(1., 1., 1., 1.)):
-    """Return the bbox transformation deltas."""
+    """Return the regression deltas."""
     src_widths = src_boxes[:, 2] - src_boxes[:, 0]
     src_heights = src_boxes[:, 3] - src_boxes[:, 1]
     src_ctr_x = src_boxes[:, 0] + 0.5 * src_widths
@@ -34,11 +34,11 @@ def bbox_transform(src_boxes, tgt_boxes, weights=(1., 1., 1., 1.)):
     deltas += [wy * (tgt_ctr_y - src_ctr_y) / src_heights]
     deltas += [ww * np.log(tgt_widths / src_widths)]
     deltas += [wh * np.log(tgt_heights / src_heights)]
-    return np.vstack(deltas).transpose()
+    return np.stack(deltas, axis=1)
 
 
 def bbox_transform_inv(boxes, deltas, weights=(1., 1., 1., 1.)):
-    """Return the boxes transformed from deltas."""
+    """Return the boxes from regression deltas."""
     if boxes.shape[0] == 0:
         return np.zeros((0, deltas.shape[1]), deltas.dtype)
     boxes = boxes.astype(deltas.dtype, copy=False)
@@ -62,4 +62,36 @@ def bbox_transform_inv(boxes, deltas, weights=(1., 1., 1., 1.)):
     pred_boxes[:, 1::4] = pred_ctr_y - 0.5 * pred_h
     pred_boxes[:, 2::4] = pred_ctr_x + 0.5 * pred_w
     pred_boxes[:, 3::4] = pred_ctr_y + 0.5 * pred_h
+    return pred_boxes
+
+
+def bbox_linear_transform(src_boxes, tgt_boxes, weights=(1., 1., 1., 1.)):
+    """Return the regression deltas."""
+    src_widths = src_boxes[:, 2] - src_boxes[:, 0]
+    src_heights = src_boxes[:, 3] - src_boxes[:, 1]
+    src_ctr_x = src_boxes[:, 0] + 0.5 * src_widths
+    src_ctr_y = src_boxes[:, 1] + 0.5 * src_heights
+    (wl, wt, wr, wb), deltas = weights, []
+    deltas += [wl * (src_ctr_x - tgt_boxes[:, 0]) / src_widths]
+    deltas += [wt * (src_ctr_y - tgt_boxes[:, 1]) / src_heights]
+    deltas += [wr * (tgt_boxes[:, 2] - src_ctr_x) / src_widths]
+    deltas += [wb * (tgt_boxes[:, 3] - src_ctr_y) / src_heights]
+    return np.stack(deltas, axis=1)
+
+
+def bbox_linear_transform_inv(boxes, deltas, weights=(1., 1., 1., 1.)):
+    """Return the boxes from regression deltas."""
+    if boxes.shape[0] == 0:
+        return np.zeros((0, deltas.shape[1]), deltas.dtype)
+    boxes = boxes.astype(deltas.dtype, copy=False)
+    widths = boxes[:, 2] - boxes[:, 0]
+    heights = boxes[:, 3] - boxes[:, 1]
+    ctr_x = boxes[:, 0] + 0.5 * widths
+    ctr_y = boxes[:, 1] + 0.5 * heights
+    deltas, (wl, wt, wr, wb) = np.maximum(deltas, 0), weights
+    pred_boxes = np.zeros(deltas.shape, deltas.dtype)
+    pred_boxes[:, 0] = ctr_x - deltas[:, 0] * widths / wl
+    pred_boxes[:, 1] = ctr_y - deltas[:, 1] * heights / wt
+    pred_boxes[:, 2] = ctr_x + deltas[:, 2] * widths / wr
+    pred_boxes[:, 3] = ctr_y + deltas[:, 3] * heights / wb
     return pred_boxes

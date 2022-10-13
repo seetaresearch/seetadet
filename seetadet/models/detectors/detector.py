@@ -14,7 +14,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from dragon.vm import torch
 from dragon.vm.torch import nn
 
 from seetadet.core.config import cfg

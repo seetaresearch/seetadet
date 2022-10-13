@@ -1,11 +1,11 @@
-#include "../operators/retinanet_decoder_op.h"
+#include "../operators/dense_decoder_op.h"
 #include "../utils/detection.h"
 
 namespace dragon {
 
 template <class Context>
 template <typename T>
-void RetinaNetDecoderOp<Context>::DoRunWithType() {
+void DenseDecoderOp<Context>::DoRunWithType() {
   auto N = Input(SCORES).dim(0);
   auto AxK = Input(SCORES).dim(1);
   auto C = Input(SCORES).dim(2);
@@ -72,6 +72,7 @@ void RetinaNetDecoderOp<Context>::DoRunWithType() {
           C, // num_classes
           im_args,
           grid_args[lvl_ind],
+          transform_type_,
           scores_.data(),
           deltas + batch_ind * Input(DELTAS).stride(0),
           indices_.data(),
@@ -83,16 +84,16 @@ void RetinaNetDecoderOp<Context>::DoRunWithType() {
   Y->Reshape({size_dets, 7});
 }
 
-DEPLOY_CPU_OPERATOR(RetinaNetDecoder);
+DEPLOY_CPU_OPERATOR(DenseDecoder);
 #ifdef USE_CUDA
-DEPLOY_CUDA_OPERATOR(RetinaNetDecoder);
+DEPLOY_CUDA_OPERATOR(DenseDecoder);
 #endif
 #ifdef USE_MPS
-REGISTER_MPS_OPERATOR(RetinaNetDecoder, RetinaNetDecoderOp<CPUContext>);
+REGISTER_MPS_OPERATOR(DenseDecoder, DenseDecoderOp<CPUContext>);
 #endif
 
-OPERATOR_SCHEMA(RetinaNetDecoder).NumInputs(4).NumOutputs(1);
+OPERATOR_SCHEMA(DenseDecoder).NumInputs(4).NumOutputs(1);
 
-NO_GRADIENT(RetinaNetDecoder);
+NO_GRADIENT(DenseDecoder);
 
 } // namespace dragon

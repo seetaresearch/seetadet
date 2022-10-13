@@ -96,6 +96,31 @@ inline void BBoxTransform(
 }
 
 template <typename T>
+inline void BBoxLinearTransform(
+    const T dl,
+    const T dt,
+    const T dr,
+    const T db,
+    const T im_w,
+    const T im_h,
+    const T im_scale_h,
+    const T im_scale_w,
+    T* bbox) {
+  const T w = bbox[2] - bbox[0];
+  const T h = bbox[3] - bbox[1];
+  const T ctr_x = bbox[0] + T(0.5) * w;
+  const T ctr_y = bbox[1] + T(0.5) * h;
+  const T x1 = ctr_x - dl * w;
+  const T y1 = ctr_y - dt * h;
+  const T x2 = ctr_x + dr * w;
+  const T y2 = ctr_y + db * h;
+  bbox[0] = std::max(T(0), std::min(x1, im_w)) / im_scale_w;
+  bbox[1] = std::max(T(0), std::min(y1, im_h)) / im_scale_h;
+  bbox[2] = std::max(T(0), std::min(x2, im_w)) / im_scale_w;
+  bbox[3] = std::max(T(0), std::min(y2, im_h)) / im_scale_h;
+}
+
+template <typename T>
 inline int GetBBoxLevel(
     const int lvl_min,
     const int lvl_max,
